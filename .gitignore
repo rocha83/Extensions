@@ -1,0 +1,8 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs/Rochas.Extensions
+/Rochas.Extensions/.vs
+/Rochas.Extensions/bin/Release
+/Rochas.Extensions/obj
