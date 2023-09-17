@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Authors>Renato Rocha</Authors>
+    <Description>A useful set of extensions for .NET native types</Description>
+    <Copyright>Renato Rocha</Copyright>
+    <PackageProjectUrl>https://github.com/rocha83/Extensions</PackageProjectUrl>
+    <PackageIcon>extensions-icon.jpg</PackageIcon>
+    <PackageLicenseFile>GNUv2_License.txt</PackageLicenseFile>
+    <PackageTags>.net native types extensions bytearray decimal money double exception resume long object clone string infulltext json xml base64 hex serialization zip compression</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="7.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="extensions-icon.jpg">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Update="GNUv2_License.txt">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>
