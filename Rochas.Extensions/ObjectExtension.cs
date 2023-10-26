@@ -1,6 +1,7 @@
 ﻿using Rochas.Extensions.Helpers;
 using System;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -63,6 +64,59 @@ namespace Rochas.Extensions
         public static HttpContent ToHttpContent(this object value)
         {
             return new JsonContent(value);
+        }
+
+        public static string? GetDiff(this object originalObj, object changedObj)
+        {
+            var diffProps = originalObj.GetType().GetProperties()
+                                       .Where(prp => !(prp.GetValue(changedObj, null) == null)
+                                                  && !prp.GetValue(changedObj, null).Equals(prp.GetValue(originalObj, null)));
+
+            if (diffProps.Count() > 0)
+            {
+                var jsonObj = "{\n {0} \n}";
+                var diffPropList = new StringBuilder();
+                diffPropList.AppendLine();
+                foreach (var prop in diffProps)
+                {
+                    var propValue = prop.GetValue(changedObj, null);
+
+                    if (propValue != null)
+                        diffPropList.AppendLine(string.Concat("\t\"", prop.Name, "\" : ",
+                                                GetJSONValue(prop.PropertyType, propValue), ", "));
+                }
+
+                var diffPropStr = diffPropList.ToString();
+
+                if (diffPropStr.Length > 4)
+                {
+                    jsonObj = jsonObj.Replace("{0}", diffPropStr.Substring(0, diffPropStr.Length - 4));
+                    return jsonObj;
+                }
+                else
+                    return null;
+            }
+            else
+                return null;
+        }
+
+        private static string? GetJSONValue(Type propType, object propValue)
+        {
+            string? typedValue = null;
+
+            if (propValue.GetType().Name.Equals("DBNull")
+                || propValue.GetType().Name.Equals("Null"))
+                typedValue = null;
+            else if (propType.Name.Equals("Int16") || propType.Name.Equals("Int32") || propType.Name.Equals("Int64")
+                    || propType.Name.Equals("Decimal") || propType.Name.Equals("Float") || propType.Name.Equals("Double")
+                    || propType.Name.Equals("Boolean"))
+                typedValue = propValue.ToString();
+            else if (propValue.GetType().Name.Equals("String"))
+                typedValue = string.Concat("\"", propValue.ToString(), "\"");
+            else if (propValue.GetType().Name.Equals("DateTime"))
+                typedValue = string.Concat("\"", ((DateTime)propValue).ToString("yyyy-MM-dd HH:mm:ss"), "\"");
+
+            return typedValue;
         }
     }
 }
