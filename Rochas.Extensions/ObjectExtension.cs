@@ -66,7 +66,7 @@ namespace Rochas.Extensions
             return new JsonContent(value);
         }
 
-        public static string? GetDiff(this object originalObj, object changedObj)
+        public static object? GetDiff(this object originalObj, object changedObj)
         {
             var diffProps = originalObj.GetType().GetProperties()
                                        .Where(prp => !(prp.GetValue(changedObj, null) == null)
@@ -91,7 +91,7 @@ namespace Rochas.Extensions
                 if (diffPropStr.Length > 4)
                 {
                     jsonObj = jsonObj.Replace("{0}", diffPropStr.Substring(0, diffPropStr.Length - 4));
-                    return jsonObj;
+                    return JsonSerializer.Deserialize<object>(jsonObj);
                 }
                 else
                     return null;
@@ -110,7 +110,7 @@ namespace Rochas.Extensions
             else if (propType.Name.Equals("Int16") || propType.Name.Equals("Int32") || propType.Name.Equals("Int64")
                     || propType.Name.Equals("Decimal") || propType.Name.Equals("Float") || propType.Name.Equals("Double")
                     || propType.Name.Equals("Boolean"))
-                typedValue = propValue.ToString();
+                typedValue = propValue.ToString().ToLower();
             else if (propValue.GetType().Name.Equals("String"))
                 typedValue = string.Concat("\"", propValue.ToString(), "\"");
             else if (propValue.GetType().Name.Equals("DateTime"))

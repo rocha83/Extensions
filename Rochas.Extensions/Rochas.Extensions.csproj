@@ -7,11 +7,14 @@
     <Authors>Renato Rocha</Authors>
     <Description>A useful set of extensions for .NET native types</Description>
     <Copyright>Renato Rocha</Copyright>
-    <PackageProjectUrl>https://github.com/rocha83/Extensions</PackageProjectUrl>
+    <PackageProjectUrl></PackageProjectUrl>
     <PackageIcon>extensions-icon.jpg</PackageIcon>
     <PackageLicenseFile>GNUv2_License.txt</PackageLicenseFile>
     <PackageTags>.net native types extensions bytearray decimal money double exception resume long object clone diff string infulltext json xml base64 hex serialization zip compression</PackageTags>
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
+    <RepositoryUrl>https://github.com/rocha83/Extensions</RepositoryUrl>
+    <RepositoryType>Git</RepositoryType>
+    <PackageReleaseNotes>Added GetDiff object extension method</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
