@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using System.Linq;
 using System.Text.Json;
 using System.Xml.Serialization;
 using Rochas.Extensions.Helpers;
@@ -52,6 +53,46 @@ namespace Rochas.Extensions
                 value = value.Replace(character, toChars[charCount++]);
 
             return value;
+        }
+
+        public static string ToNormalizedDescription(this string value)
+        {
+			var descArray = value.Split('\n').ToList();
+			descArray.RemoveAll(ln => string.IsNullOrWhiteSpace(ln.Trim()));
+
+			if (descArray.Any(ln => !ln.Contains(':')))
+			{
+				var count = 0;
+				var newArray = descArray.ToList();
+				foreach (var item in newArray)
+				{
+					var cleanedItem = item.Trim().Replace("\n", string.Empty);
+					if (!cleanedItem.EndsWith(':'))
+					{
+						var descItem = descArray[count].Trim().Replace("\n", string.Empty);
+						if (!cleanedItem.Contains(':'))
+						{
+							descArray[count] = $"{descItem} {cleanedItem}\n";
+							descArray.Remove(item);
+						}
+						else
+							descArray[count] = $"{cleanedItem}\n";
+
+						count++;
+					}
+				}
+			}
+			else
+			{
+				var count = 0;
+				foreach (var item in descArray)
+				{
+					descArray[count] = descArray[count].Trim().Replace("\n", string.Empty);
+					descArray[count] += "\n";
+				}
+			}
+
+			return string.Join('\n', descArray);
         }
 
         public static bool IsCPF(this string value)
