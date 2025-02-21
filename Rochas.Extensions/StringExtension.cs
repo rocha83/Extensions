@@ -57,19 +57,24 @@ namespace Rochas.Extensions
 
         public static string ToNormalizedDescription(this string value)
         {
+            if (string.IsNullOrWhiteSpace(value))
+                return string.Empty;
+
 			var descArray = value.Split('\n').ToList();
 			descArray.RemoveAll(ln => string.IsNullOrWhiteSpace(ln.Trim()));
+			var newArray = descArray.ToList();
 
 			if (descArray.Any(ln => !ln.Contains(':')))
 			{
 				var count = 0;
-				var newArray = descArray.ToList();
 				foreach (var item in newArray)
 				{
-					var cleanedItem = item.Trim().Replace("\n", string.Empty);
+					var cleanedItem = item.Trim().Replace("\r", string.Empty)
+                                                 .Replace("\n", string.Empty);
 					if (!cleanedItem.EndsWith(':'))
 					{
-						var descItem = descArray[count].Trim().Replace("\n", string.Empty);
+						var descItem = descArray[count].Trim().Replace("\r", string.Empty)
+												              .Replace("\n", string.Empty);
 						if (!cleanedItem.Contains(':'))
 						{
 							descArray[count] = $"{descItem} {cleanedItem}\n";
@@ -85,10 +90,12 @@ namespace Rochas.Extensions
 			else
 			{
 				var count = 0;
-				foreach (var item in descArray)
+				foreach (var item in newArray)
 				{
-					descArray[count] = descArray[count].Trim().Replace("\n", string.Empty);
+                    descArray[count] = descArray[count].Trim().Replace("\r", string.Empty)
+												              .Replace("\n", string.Empty);
 					descArray[count] += "\n";
+                    count++;
 				}
 			}
 
