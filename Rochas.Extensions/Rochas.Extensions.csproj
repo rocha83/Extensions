@@ -10,7 +10,7 @@
     <PackageProjectUrl></PackageProjectUrl>
     <PackageIcon>extensions-icon.jpg</PackageIcon>
     <PackageLicenseFile>GNUv2_License.txt</PackageLicenseFile>
-    <PackageTags>.net native types extensions bytearray decimal money double exception resume long object clone diff string infulltext json xml base64 hex serialization zip compression</PackageTags>
+    <PackageTags>.net native types extensions bytearray decimal money double exception resume long object clone diff string description normalization infulltext json xml base64 hex serialization zip compression</PackageTags>
     <Version>1.0.5</Version>
     <RepositoryUrl>https://github.com/rocha83/Extensions</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
