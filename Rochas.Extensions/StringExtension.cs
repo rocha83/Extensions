@@ -75,7 +75,7 @@ namespace Rochas.Extensions
 					{
 						var descItem = descArray[count].Trim().Replace("\r", string.Empty)
 												              .Replace("\n", string.Empty);
-						if (!cleanedItem.Contains(':'))
+						if (descItem.Contains(':') && !cleanedItem.Contains(':'))
 						{
 							descArray[count] = $"{descItem} {cleanedItem}\n";
 							descArray.Remove(item);

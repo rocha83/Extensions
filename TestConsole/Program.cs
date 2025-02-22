@@ -30,7 +30,7 @@ Console.WriteLine();
 
 // String Normalization
 
-var rawDescription = "Marca: HARLEY-DAVIDSON\r\n\r\nModelo: SPORTSTER\r\n\r\nVersão: SPORTSTER XL 1200X - FORTY-EIGHT\r\n\r\nAno de Fabricação: 2017\r\n\r\nAno Modelo: 2018\r\n\r\nBlindado: Não\r\n\r\nTipo de Documento: Normal\r\n\r\nComitente: PREVISUL\r\n\r\nTipo de Monta: Não Aplicável\r\n\r\nCondição: FINANCIAMENTO\r\n\r\nValor FIPE: R$ 51.270,00 BRL\r\n\r\nChassi: \r\n\r\nTipo de Chassi: Normal\r\n\r\nCategoria: Motos\r\n\r\nCondição de Func.: Motor dá partida e engrena\r\n\r\nFinal de Placa: 6\r\n\r\nCombustível: Gasolina\r\n\r\nChave:Sim";
+var rawDescription = "TRATOR\r\nMARCA MASSEY FERGUSON\r\nMODELO 292 (4x4)\r\nANO 2008\r\nHORAS 9.000\r\nTRAÇÃO 4X4\r\nPOTENCIA 105 CV\r\nVALOR R$180.000,00";
 var normalizedDescription = rawDescription.ToNormalizedDescription();
 Console.WriteLine(normalizedDescription);
 
