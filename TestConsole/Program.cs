@@ -30,9 +30,21 @@ Console.WriteLine();
 
 // String Normalization
 
-var rawDescription = "TRATOR\r\nMARCA MASSEY FERGUSON\r\nMODELO 292 (4x4)\r\nANO 2008\r\nHORAS 9.000\r\nTRAÇÃO 4X4\r\nPOTENCIA 105 CV\r\nVALOR R$180.000,00";
+var rawDescription = "TRATOR\r\nMARCA MASSEY FERGUSON\r\nMODELO 292 (4x4)\r\nANO 2008\r\nHORAS 9.000\r\nTRAÇÃO 4X4\r\nPOTENCIA 105 CV\r\nVALOR R$ 180.000,00";
 var normalizedDescription = rawDescription.ToNormalizedDescription();
 Console.WriteLine(normalizedDescription);
+
+Console.WriteLine();
+Console.WriteLine("---");
+Console.WriteLine();
+
+// String Tokenization
+var rawText = "As maiores bolsas de valores dos Estados Unidos começaram a semana em queda, com especial atenção voltada à Tesla de Elon Musk. As ações da montadora despencaram mais de 15% no pregão desta segunda-feira (10) e perderam toda a valorização obtida desde a eleição do presidente norte-americano, Donald Trump, no ano passado. Segundo a agência Reuters, a marca acumula a maior redução em seu valor de mercado entre as principais fabricantes de carros.\r\n\r\nA Tesla viu suas ações subirem nas primeiras semanas após a eleição de Donald Trump e chegou à marca de US$ 1,5 trilhão em valor de mercado em 17 de dezembro. De lá pra cá, no entanto, a companhia já registra uma queda de 52,4% em seu valor de mercado em três meses. Nesta segunda-feira (10), a Tesla fechou o pregão valendo US$ 714,6 bilhões. As ações de Elon Musk na política incluem demissões em massa de funcionários do governo dos EUA, enquanto o bilionário atua como assessor sênior do presidente americano. Investidores também estão preocupados que a política esteja distraindo o homem mais rico do mundo de sua principal fonte de receita.\r\n\r\nInvestidores seguem desapontados com Elon Musk\r\nO valor de mercado da Tesla não vem exclusivamente das vendas de carros elétricos. Segundo a Reuters, esse braço de negócios responde por cerca de 25%, com o restante baseado na promessa dos veículos totalmente autônomos, também chamados de robotáxis.\r\n\r\nEles ainda não foram lançados, mesmo tendo sido prometidos há quase uma década. O mais próximo que temos deste produto é uma apresentação de protótipo, feita em outubro de 2024, quando o próprio Elon Musk mostrou ao mundo o Cybercab.";
+var textTokens = rawText.Tokenize();
+Console.WriteLine($"Tokens of text: {rawText}");
+Console.WriteLine();
+foreach (var token in textTokens)
+    Console.WriteLine(token);
 
 Console.WriteLine();
 Console.WriteLine("---");

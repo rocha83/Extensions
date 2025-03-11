@@ -47,12 +47,53 @@ namespace Rochas.Extensions
         public static string FilterSpecialChars(this string value)
         {
             int charCount = 0;
-            var fromChars = "àáãçéíóõúÀÁÃÇÉÍÓÕÚ";
-            var toChars = "aaaceioouAAACEIOOU";
+            var specialChars = ".:,;|/()[]'+—=!?";
+            var fromChars = "àáãçéêíóõôúÀÁÃÇÉÍÓÔÕÚ";
+            var toChars = "aaaceeiooouAAACEIOOOU";
+
+            foreach (var character in specialChars)
+                value = value.Replace(character, ' ');
+
             foreach (var character in fromChars)
                 value = value.Replace(character, toChars[charCount++]);
 
-            return value;
+            return value.Replace("\\", string.Empty)
+                        .Replace("\"", string.Empty)
+                        .Replace("\n", " ").Trim();
+        }
+
+        public static string RemoveTextConnectives(this string value)
+        {
+            var connectives = "em primeiro lugar,antes de mais nada,antes de tudo,em principio,primeiramente,acima de tudo,precipuamente,principalmente,primordialmente,sobretudo,a priori,a posteriori,";
+            connectives += "entao,enfim, logo ,depois,imediatamente, apos ,a principio,no momento,em que, pouco , antes ,anteriormente,geralmente, posteriormente,em seguida,afinal,por fim,finalmente,agora,atualmente,hoje,frequentemente,constantemente,às vezes,eventualmente,por vezes,ocasionalmente,sempre,raramente,não raro,ao mesmo tempo,simultaneamente,nesse ínterim,nesse,meio tempo,hiato,"; 
+            connectives += "enquanto,quando, que ,depois,sempre, assim, desde, todas, as vezes,cada vez que,apenas, ja , mal ,nem bem,igualmente,da mesma forma,assim também,do mesmo modo,similarmente,semelhantemente,analogamente,por analogia,de maneira,identica,conformidade, com , de acordo , segundo , conforme ,sob o mesmo, ponto de vista,tal qual,tanto quanto, como , assim como , viu ,";
+            connectives += " se , por , caso,eventualmente,desde que,ainda,além disso,demais,ademais,outrossim,mais,por cima,por outro lado,também, nem , nao so ,mas tambem,como tambem,nao apenas,bem como, ou , em , do , dos , da , no , ter , seu , sua , seus , suas , das , destes , deste , destas , desta, ao , aos , na , ha ,pra ca, era , eram , um , uma ,";
+            connectives += "talvez,provavelmente,possivelmente,exclusivamente,quem sabe, e provavel , nao e certo , se e que , de certo , por certo ,certamente,indubitavelmente,inquestionavelmente,sem duvida,inegavelmente, com certeza ,inesperadamente,inopinadamente,subitamente, de repente ,imprevistamente,surpreendentemente, entanto , tanto , quanto ,";
+            connectives += "por exemplo,só para ilustrar,so para exemplificar, isto ,quer dizer,em outras palavras,ou por outra,a saber,ou seja,alias,com o fim de,a fim de,com o proposito de,com a finalidade de,com o intuito de, para que,a fim de que, para, como, ser, em , o , os , e , de , ele , ela , a , as ,Os ,As ,Eles ,Elas ,Ele ,Ela , nas , foi , estao , estava ";
+            connectives += " perto de , proximo a , junto a , juntamente , dentro , fora , foram , mais adiante , aqui , além , la , ali , este , esta , isto , esse , essa , isso , aquele , aquela , aquilo , a ,em suma,em sintese,em conclusao,enfim, em resumo ,portanto,assim,dessa forma,dessa maneira,desse modo,logo,pois,dessarte,destarte,assim sendo, entre , vem , vai , vao ,";
+            connectives += "pelo contrario,em contraste com,salvo,exceto, menos , mas , contudo ,todavia,entretanto, no entanto , embora, apesar, ainda, que,mesmo que,posto que,posto,conquanto,se bem que, por mais que , por menos que , so que , ao passo que , ou seja , a proporcao , a medida , ao passo ,quanto mais,quanto menos, em meio ao , em meio aquele , o valor de , o valor do , o valor da ";
+
+            var connectiveArray = connectives.Split(',').ToList();
+            foreach (var connective in connectiveArray)
+                value = value.Replace(connective, " ");
+
+            if (!string.IsNullOrWhiteSpace(value))
+                value = value.ToLower();
+
+            foreach (var connective in connectiveArray)
+                value = value.Replace(connective, " ");
+
+            return value.Trim();
+        }
+
+        public static string[] Tokenize(this string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return null;
+
+            var result = value.FilterSpecialChars().RemoveTextConnectives().Split(' ');
+
+            return result.Where(c => !string.IsNullOrWhiteSpace(c.Trim()) && !c.Equals("-")).ToArray();
         }
 
         public static string ToNormalizedDescription(this string value)
