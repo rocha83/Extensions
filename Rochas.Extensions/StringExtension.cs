@@ -1,15 +1,22 @@
-﻿using System;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Rochas.Extensions.Helpers;
+using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Linq;
+using System.Reflection;
+using System.Text;
 using System.Text.Json;
 using System.Xml.Serialization;
-using Rochas.Extensions.Helpers;
 
 namespace Rochas.Extensions
 {
     public static class StringExtension
     {
+
+        #region Serialization methods
+
         public static object? FromJson(this string value)
         {
             return JsonSerializer.Deserialize<object>(value);
@@ -33,16 +40,19 @@ namespace Rochas.Extensions
 
             return result;
         }
+        public static byte[] FromBase64String(this string value)
+        {
+            return Convert.FromBase64String(value);
+        }
 
         public static byte[] ToByteArray(this string value)
         {
             return Encoding.Default.GetBytes(value);
         }
 
-        public static byte[] FromBase64String(this string value)
-        {
-            return Convert.FromBase64String(value);
-        }
+        #endregion
+
+        #region Data mining methods
 
         public static string FilterSpecialChars(this string value)
         {
@@ -65,7 +75,7 @@ namespace Rochas.Extensions
         public static string RemoveTextConnectives(this string value)
         {
             var connectives = "em primeiro lugar,antes de mais nada,antes de tudo,em principio,primeiramente,acima de tudo,precipuamente,principalmente,primordialmente,sobretudo,a priori,a posteriori,";
-            connectives += "entao,enfim, logo ,depois,imediatamente, apos ,a principio,no momento,em que, pouco , antes ,anteriormente,geralmente, posteriormente,em seguida,afinal,por fim,finalmente,agora,atualmente,hoje,frequentemente,constantemente,às vezes,eventualmente,por vezes,ocasionalmente,sempre,raramente,não raro,ao mesmo tempo,simultaneamente,nesse ínterim,nesse,meio tempo,hiato,"; 
+            connectives += "entao,enfim, logo ,depois,imediatamente, apos ,a principio,no momento,em que, pouco , antes ,anteriormente,geralmente, posteriormente,em seguida,afinal,por fim,finalmente,agora,atualmente,hoje,frequentemente,constantemente,às vezes,eventualmente,por vezes,ocasionalmente,sempre,raramente,não raro,ao mesmo tempo,simultaneamente,nesse ínterim,nesse,meio tempo,hiato,";
             connectives += "enquanto,quando, que ,depois,sempre, assim, desde, todas, as vezes,cada vez que,apenas, ja , mal ,nem bem,igualmente,da mesma forma,assim também,do mesmo modo,similarmente,semelhantemente,analogamente,por analogia,de maneira,identica,conformidade, com , de acordo , segundo , conforme ,sob o mesmo, ponto de vista,tal qual,tanto quanto, como , assim como , viu ,";
             connectives += " se , por , caso,eventualmente,desde que,ainda,além disso,demais,ademais,outrossim,mais,por cima,por outro lado,também, nem , nao so ,mas tambem,como tambem,nao apenas,bem como, ou , em , do , dos , da , no , ter , seu , sua , seus , suas , das , destes , deste , destas , desta, ao , aos , na , ha ,pra ca, era , eram , um , uma ,";
             connectives += "talvez,provavelmente,possivelmente,exclusivamente,quem sabe, e provavel , nao e certo , se e que , de certo , por certo ,certamente,indubitavelmente,inquestionavelmente,sem duvida,inegavelmente, com certeza ,inesperadamente,inopinadamente,subitamente, de repente ,imprevistamente,surpreendentemente, entanto , tanto , quanto ,";
@@ -101,47 +111,129 @@ namespace Rochas.Extensions
             if (string.IsNullOrWhiteSpace(value))
                 return string.Empty;
 
-			var descArray = value.Split('\n').ToList();
-			descArray.RemoveAll(ln => string.IsNullOrWhiteSpace(ln.Trim()));
-			var newArray = descArray.ToList();
+            var descArray = value.Split('\n').ToList();
+            descArray.RemoveAll(ln => string.IsNullOrWhiteSpace(ln.Trim()));
+            var newArray = descArray.ToList();
 
-			if (descArray.Any(ln => !ln.Contains(':')))
-			{
-				var count = 0;
-				foreach (var item in newArray)
-				{
-					var cleanedItem = item.Trim().Replace("\r", string.Empty)
+            if (descArray.Any(ln => !ln.Contains(':')))
+            {
+                var count = 0;
+                foreach (var item in newArray)
+                {
+                    var cleanedItem = item.Trim().Replace("\r", string.Empty)
                                                  .Replace("\n", string.Empty);
-					if (!cleanedItem.EndsWith(':'))
-					{
-						var descItem = descArray[count].Trim().Replace("\r", string.Empty)
-												              .Replace("\n", string.Empty);
-						if (descItem.Contains(':') && !cleanedItem.Contains(':'))
-						{
-							descArray[count] = $"{descItem} {cleanedItem}\n";
-							descArray.Remove(item);
-						}
-						else
-							descArray[count] = $"{cleanedItem}\n";
+                    if (!cleanedItem.EndsWith(':'))
+                    {
+                        var descItem = descArray[count].Trim().Replace("\r", string.Empty)
+                                                              .Replace("\n", string.Empty);
+                        if (descItem.Contains(':') && !cleanedItem.Contains(':'))
+                        {
+                            descArray[count] = $"{descItem} {cleanedItem}\n";
+                            descArray.Remove(item);
+                        }
+                        else
+                            descArray[count] = $"{cleanedItem}\n";
 
-						count++;
-					}
-				}
-			}
-			else
-			{
-				var count = 0;
-				foreach (var item in newArray)
-				{
+                        count++;
+                    }
+                }
+            }
+            else
+            {
+                var count = 0;
+                foreach (var item in newArray)
+                {
                     descArray[count] = descArray[count].Trim().Replace("\r", string.Empty)
-												              .Replace("\n", string.Empty);
-					descArray[count] += "\n";
+                                                              .Replace("\n", string.Empty);
+                    descArray[count] += "\n";
                     count++;
-				}
-			}
+                }
+            }
 
-			return string.Join('\n', descArray);
+            return string.Join('\n', descArray);
         }
+
+        #endregion
+
+        #region Runtime compilation methods
+
+        public static object ExecuteAsSourceCode(this string sourceCode, string typeName, string methodName, dynamic parameter, Type[] optionalReferences = null)
+        {
+            var trustedPlatforms = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string;
+
+            if (trustedPlatforms == null)
+            {
+                throw new Exception("Não foi possível obter as referências dos assemblies confiáveis.");
+            }
+
+            var referencePaths = trustedPlatforms.Split(Path.PathSeparator);
+
+            var references = referencePaths
+                .Where(p => File.Exists(p))  // Garantir que o arquivo exista
+                .Distinct()
+                .Select(p => MetadataReference.CreateFromFile(p))
+                .ToList();
+
+            references.Add(MetadataReference.CreateFromFile(typeof(System.Linq.Enumerable).Assembly.Location)); // System.Linq
+            references.Add(MetadataReference.CreateFromFile(typeof(System.Collections.Generic.List<>).Assembly.Location)); // System.Collections.Generic
+            references.Add(MetadataReference.CreateFromFile(typeof(System.Runtime.CompilerServices.DynamicAttribute).Assembly.Location)); // Para tipos dinâmicos
+            references.Add(MetadataReference.CreateFromFile(typeof(System.Runtime.InteropServices.Marshal).Assembly.Location)); // System.Runtime (para tipos básicos e manipulação de memória)
+            references.Add(MetadataReference.CreateFromFile(typeof(System.String).Assembly.Location)); // System.Private.CoreLib (geral)
+            references.Add(MetadataReference.CreateFromFile(typeof(System.Object).Assembly.Location)); // System.Private.CoreLib (geral)
+            var netstandard = referencePaths.FirstOrDefault(p => Path.GetFileName(p).Equals("netstandard.dll", StringComparison.OrdinalIgnoreCase));
+            if (netstandard != null)
+                references.Add(MetadataReference.CreateFromFile(netstandard));
+
+            if (optionalReferences != null)
+                foreach (var optionalRef in optionalReferences)
+                    references.Add(MetadataReference.CreateFromFile(optionalRef.Assembly.Location));
+
+            var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode);
+
+            var compilation = CSharpCompilation.Create(
+                assemblyName: Path.GetRandomFileName(),
+                syntaxTrees: new[] { syntaxTree },
+                references: references,
+                options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+            );
+
+            using var ms = new MemoryStream();
+            var result = compilation.Emit(ms);
+
+            if (!result.Success)
+            {
+                string errors = "Compilation failed:\n";
+                foreach (var diagnostic in result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error))
+                {
+                    var lineSpan = diagnostic.Location.GetLineSpan();
+                    errors += $"Line {lineSpan.StartLinePosition.Line + 1}, Column {lineSpan.StartLinePosition.Character + 1}: {diagnostic.GetMessage()}\n";
+                }
+                throw new Exception(errors);
+            }
+
+            ms.Seek(0, SeekOrigin.Begin);
+            Assembly assembly = Assembly.Load(ms.ToArray());
+
+            Type dynamicType = assembly.GetType(typeName)
+                ?? throw new Exception($"Classe '{typeName}' não encontrada no código compilado.");
+
+            object instance = Activator.CreateInstance(dynamicType)
+                ?? throw new Exception($"Não foi possível criar instância da classe '{typeName}'.");
+
+            MethodInfo method = dynamicType.GetMethod(methodName)
+                ?? throw new Exception($"Método '{methodName}' não encontrado na classe '{typeName}'.");
+
+            try
+            {
+                return method.Invoke(instance, new object[] { parameter });
+            }
+            catch (TargetInvocationException ex)
+            {
+                throw ex.InnerException ?? ex;
+            }
+        }
+
+        #endregion
 
         public static bool IsCPF(this string value)
         {

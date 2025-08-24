@@ -1,5 +1,59 @@
 ﻿using Rochas.Extensions;
 
+var sampleSource = @"
+
+using System.Linq;
+
+public class FRTDescriptionNormalizer
+{
+    string descriptionTemplate = @""Marca: {0}
+
+                        Modelo: {1}
+
+                        Versão: {2}
+
+                        Ano: {3}
+
+                        Cor: {4}
+
+                        Combustível: {5}
+
+                        Categoria: CARROS
+
+                        Tipo de Documento: NORMAL
+
+                        Final da Placa: {6}
+
+                        Chaves: SIM"";
+
+    public string Normalize(string description)
+    {
+        var descriptionArray = description.Split("","");
+
+        var productBranch = description.Substring(0, description.IndexOf(""/"")).Trim();
+        var firstSpace = description.IndexOf("" "");
+        var productModel = description.Substring(description.IndexOf(""/"") + 1, (firstSpace - productBranch.Length - 1)).Trim();
+        var productVersion = description.Substring(description.IndexOf("" ""), 
+                                                   description.IndexOf("","") - (productBranch.Length + (productModel.Length + 1))).Trim();
+        var productYear = descriptionArray[1].Trim();
+        var finalPlateNumber = descriptionArray[2].LastOrDefault().ToString();
+        var productFuel = descriptionArray[3].Trim();
+        var productColor = descriptionArray[4].Trim().Substring(0,
+                            descriptionArray[descriptionArray.Length - 1].Trim().IndexOf("" ""));
+
+        return string.Format(descriptionTemplate, productBranch, productModel, productVersion, productYear, productColor, productFuel, finalPlateNumber);
+    }
+}";
+
+var originalDescription = @"FIAT/ARGO DRIVE 1.0, 20/20, PLACA: Q__-___6, GASOL/ALC, PRETA
+
+                            FIAT/ARGO DRIVE 1.0, 20/20, PLACA: Q__-___6, GASOL/ALC, PRETA Visitação Virtual
+
+                            IPVA 2025 PAGO";
+
+var normalizedDescription = sampleSource.ExecuteAsSourceCode("FRTDescriptionNormalizer",
+                                                             "Normalize", originalDescription) as string;
+
 // Object Diff
 
 var x1 = new BaseEntity()
@@ -31,7 +85,7 @@ Console.WriteLine();
 // String Normalization
 
 var rawDescription = "TRATOR\r\nMARCA MASSEY FERGUSON\r\nMODELO 292 (4x4)\r\nANO 2008\r\nHORAS 9.000\r\nTRAÇÃO 4X4\r\nPOTENCIA 105 CV\r\nVALOR R$ 180.000,00";
-var normalizedDescription = rawDescription.ToNormalizedDescription();
+normalizedDescription = rawDescription.ToNormalizedDescription();
 Console.WriteLine(normalizedDescription);
 
 Console.WriteLine();

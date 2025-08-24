@@ -11,3 +11,6 @@
 /TestConsole/bin/Release/net6.0
 /TestConsole/obj
 /TestConsole/bin/Debug/net6.0
+/TestConsole/bin/Debug/net8.0
+/TemplateEngineHost/vs
+/TestConsole/bin/Release/net8.0
