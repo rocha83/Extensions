@@ -11,7 +11,7 @@
     <PackageIcon>extensions-icon.jpg</PackageIcon>
     <PackageLicenseFile>GNUv2_License.txt</PackageLicenseFile>
     <PackageTags>.net native types extensions bytearray decimal money double exception resume long object clone diff string description normalization tokenization infulltext json xml base64 hex serialization zip compression runtime compilation</PackageTags>
-    <Version>1.0.10</Version>
+    <Version>1.1.0</Version>
     <RepositoryUrl>https://github.com/rocha83/Extensions</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
     <PackageReleaseNotes>Added ExecuteAsSourceCode string extension method</PackageReleaseNotes>
