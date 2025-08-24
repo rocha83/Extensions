@@ -153,6 +153,12 @@ namespace Rochas.Extensions
             return string.Join('\n', descArray);
         }
 
+        public static bool HasNumber(this string value)
+        {
+            var numbers = new List<char>() { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+            return value.Any(c => numbers.Contains(c));
+        }
+
         #endregion
 
         #region Runtime compilation methods
