@@ -74,14 +74,33 @@ namespace Rochas.Extensions
 
         public static string RemoveTextConnectives(this string value)
         {
-            var connectives = "em primeiro lugar,antes de mais nada,antes de tudo,em principio,primeiramente,acima de tudo,precipuamente,principalmente,primordialmente,sobretudo,a priori,a posteriori,";
-            connectives += "entao,enfim, logo ,depois,imediatamente, apos ,a principio,no momento,em que, pouco , antes ,anteriormente,geralmente, posteriormente,em seguida,afinal,por fim,finalmente,agora,atualmente,hoje,frequentemente,constantemente,às vezes,eventualmente,por vezes,ocasionalmente,sempre,raramente,não raro,ao mesmo tempo,simultaneamente,nesse ínterim,nesse,meio tempo,hiato,";
-            connectives += "enquanto,quando, que ,depois,sempre, assim, desde, todas, as vezes,cada vez que,apenas, ja , mal ,nem bem,igualmente,da mesma forma,assim também,do mesmo modo,similarmente,semelhantemente,analogamente,por analogia,de maneira,identica,conformidade, com , de acordo , segundo , conforme ,sob o mesmo, ponto de vista,tal qual,tanto quanto, como , assim como , viu ,";
-            connectives += " se , por , caso,eventualmente,desde que,ainda,além disso,demais,ademais,outrossim,mais,por cima,por outro lado,também, nem , nao so ,mas tambem,como tambem,nao apenas,bem como, ou , em , do , dos , da , no , ter , seu , sua , seus , suas , das , destes , deste , destas , desta, ao , aos , na , ha ,pra ca, era , eram , um , uma ,";
-            connectives += "talvez,provavelmente,possivelmente,exclusivamente,quem sabe, e provavel , nao e certo , se e que , de certo , por certo ,certamente,indubitavelmente,inquestionavelmente,sem duvida,inegavelmente, com certeza ,inesperadamente,inopinadamente,subitamente, de repente ,imprevistamente,surpreendentemente, entanto , tanto , quanto ,";
-            connectives += "por exemplo,só para ilustrar,so para exemplificar, isto ,quer dizer,em outras palavras,ou por outra,a saber,ou seja,alias,com o fim de,a fim de,com o proposito de,com a finalidade de,com o intuito de, para que,a fim de que, para, como, ser, em , o , os , e , de , ele , ela , a , as ,Os ,As ,Eles ,Elas ,Ele ,Ela , nas , foi , estao , estava ";
-            connectives += " perto de , proximo a , junto a , juntamente , dentro , fora , foram , mais adiante , aqui , além , la , ali , este , esta , isto , esse , essa , isso , aquele , aquela , aquilo , a ,em suma,em sintese,em conclusao,enfim, em resumo ,portanto,assim,dessa forma,dessa maneira,desse modo,logo,pois,dessarte,destarte,assim sendo, entre , vem , vai , vao ,";
-            connectives += "pelo contrario,em contraste com,salvo,exceto, menos , mas , contudo ,todavia,entretanto, no entanto , embora, apesar, ainda, que,mesmo que,posto que,posto,conquanto,se bem que, por mais que , por menos que , so que , ao passo que , ou seja , a proporcao , a medida , ao passo ,quanto mais,quanto menos, em meio ao , em meio aquele , o valor de , o valor do , o valor da ";
+            var connectives = @"
+            a,ao,aos,à,às,as,o,os,da,do,das,dos,no,na,nas,nos,
+            de,por,para,pra,com,sem,sobre,entre,ate,apos,após,ate,
+            em,ao,onde,quando,que,se,pois,como,ou,mas,porém,todavia,entretanto,
+            entao,então,logo,assim,portanto,dessa forma,deste modo,desse modo,
+            primeiro,primeiramente,sobretudo,acima de tudo,antes,depois,
+            anteriormente,posteriormente,em seguida,agora,atualmente,hoje,
+            sempre,raramente,às vezes,vezes,frequentemente,constantemente,
+            eventualmente,ocasionalmente,enquanto,desde,desde que,
+            apenas,ja,mal,quase,nem,bem,
+            igualmente,da mesma forma,do mesmo modo,similarmente,analogamente,
+            conforme,segundo,consoante,de acordo,em conformidade,
+            tal qual,tanto quanto,assim como,
+            ainda,alem disso,ademais,outrossim,tambem,nao so,mas tambem,
+            bem como,como tambem,nao apenas,
+            talvez,provavelmente,possivelmente,certamente,com certeza,
+            por exemplo,isto e,quer dizer,ou seja,a saber,
+            para que,a fim de,com o fim de,com a finalidade de,com o intuito de,
+            porque,porquanto,por isso,
+            porem,contudo,todavia,entretanto,no entanto,
+            embora,apesar de,mesmo que,posto que,conquanto,se bem que,
+            por mais que,por menos que,ao passo que,enquanto que,
+            em suma,em sintese,em resumo,em conclusao,enfim,
+            perto,proximo,junto,juntamente,dentro,fora,aqui,ali,la,
+            este,esta,isto,esse,essa,isso,aquele,aquela,aquilo,
+            vem,vai,vao,foi,estao,estava,foram,ser,estar,ter,
+            valor,valor de,valor do,valor da";
 
             var connectiveArray = connectives.Split(',').ToList();
             foreach (var connective in connectiveArray)
@@ -158,6 +177,26 @@ namespace Rochas.Extensions
             var numbers = new List<char>() { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
             return value.Any(c => numbers.Contains(c));
         }
+                
+        public static uint GetCustomHashCode(this string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return 0;
+
+            //Implementação do FNV-1a 32bits
+
+            const uint prime = 16777619;
+            uint hash = 2166136261;
+
+            foreach (char c in value)
+            {
+                hash ^= (byte)c;
+                hash *= prime;
+            }
+
+            return hash;
+        }
+        
 
         #endregion
 
@@ -241,48 +280,81 @@ namespace Rochas.Extensions
 
         #endregion
 
-        public static bool IsCPF(this string value)
+        public static bool IsCPFOrCNPJ(this string value)
         {
-            int sum = 0;
-            int[] multiplex1 = new int[9] { 10, 9, 8, 7, 6, 5, 4, 3, 2 };
-            int[] multiplex2 = new int[10] { 11, 10, 9, 8, 7, 6, 5, 4, 3, 2 };
-
-            value = value.Trim().Replace(".", string.Empty).Replace(",", string.Empty).Replace("-", string.Empty);
-
-            if (value.Length != 11)
+            if (string.IsNullOrWhiteSpace(value))
                 return false;
 
-            var tempCPF = value.Substring(0, 9);
+            // Normaliza
+            value = value.Trim()
+                         .Replace(".", "")
+                         .Replace("-", "")
+                         .Replace("/", "")
+                         .Replace(",", "");
 
-            for (int count = 0; count < 9; count++)
-                sum += int.Parse(tempCPF[count].ToString()) * multiplex1[count];
+            // -------------------------------------------
+            // CPF (11 dígitos)
+            // -------------------------------------------
+            if (value.Length == 11)
+            {
+                // Evita CPFs inválidos conhecidos (11111111111, 2222222..., etc.)
+                if (new string(value[0], 11) == value)
+                    return false;
 
-            int rest = sum % 11;
+                int sum = 0;
+                int[] m1 = { 10, 9, 8, 7, 6, 5, 4, 3, 2 };
+                int[] m2 = { 11, 10, 9, 8, 7, 6, 5, 4, 3, 2 };
 
-            if (rest < 2)
-                rest = 0;
-            else
-                rest = 11 - rest;
+                // 1º dígito
+                for (int i = 0; i < 9; i++)
+                    sum += (value[i] - '0') * m1[i];
 
-            string digit = rest.ToString();
+                int rest = sum % 11;
+                int d1 = rest < 2 ? 0 : 11 - rest;
 
-            tempCPF += digit;
+                // 2º dígito
+                sum = 0;
+                for (int i = 0; i < 10; i++)
+                    sum += (value[i] - '0') * m2[i];
 
-            sum = 0;
+                rest = sum % 11;
+                int d2 = rest < 2 ? 0 : 11 - rest;
 
-            for (int count = 0; count < 10; count++)
-                sum += int.Parse(tempCPF[count].ToString()) * multiplex2[count];
+                return value[9] - '0' == d1 && value[10] - '0' == d2;
+            }
 
-            rest = sum % 11;
+            // -------------------------------------------
+            // CNPJ (14 dígitos)
+            // -------------------------------------------
+            if (value.Length == 14)
+            {
+                // bloqueia CNPJs repetidos (000000..., 111111..., etc)
+                if (new string(value[0], 14) == value)
+                    return false;
 
-            if (rest < 2)
-                rest = 0;
-            else
-                rest = 11 - rest;
+                int sum = 0;
+                int[] m1 = { 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2 };
+                int[] m2 = { 6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2 };
 
-            digit += rest.ToString();
+                // 1º dígito
+                for (int i = 0; i < 12; i++)
+                    sum += (value[i] - '0') * m1[i];
 
-            return value.EndsWith(digit);
+                int rest = sum % 11;
+                int d1 = rest < 2 ? 0 : 11 - rest;
+
+                // 2º dígito
+                sum = 0;
+                for (int i = 0; i < 13; i++)
+                    sum += (value[i] - '0') * m2[i];
+
+                rest = sum % 11;
+                int d2 = rest < 2 ? 0 : 11 - rest;
+
+                return value[12] - '0' == d1 && value[13] - '0' == d2;
+            }
+
+            return false;
         }
 
         public static string Zip(this string value)
