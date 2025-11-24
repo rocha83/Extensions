@@ -1,14 +1,17 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Rochas.Extensions.Helpers;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using System.Runtime.Loader;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 using System.Xml.Serialization;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Scripting;
+using Microsoft.CodeAnalysis.CSharp.Scripting;
+using Rochas.Extensions.Helpers;
 
 namespace Rochas.Extensions
 {
@@ -196,85 +199,56 @@ namespace Rochas.Extensions
 
             return hash;
         }
-        
+
 
         #endregion
 
-        #region Runtime compilation methods
+        #region Runtime code execution methods
 
-        public static object ExecuteAsSourceCode(this string sourceCode, string typeName, string methodName, dynamic parameter, Type[] optionalReferences = null)
+        public static async Task<object?> ExecuteAsSourceCode(string sourceCode, object globals, Type[] allowedTypes,
+                                                              int timeoutMs = 300, CancellationToken externalCancellation = default)
         {
-            var trustedPlatforms = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string;
+            if (allowedTypes == null || allowedTypes.Length == 0)
+                throw new ArgumentException("É necessário informar pelo menos um tipo permitido.");
 
-            if (trustedPlatforms == null)
-            {
-                throw new Exception("Não foi possível obter as referências dos assemblies confiáveis.");
-            }
+            var allowedAssemblies = allowedTypes.Select(t => t.Assembly)
+                                                .Concat(new[] { typeof(object).Assembly })  // System.Private.CoreLib
+                                                .Concat(new[] { typeof(Console).Assembly }) // System.Console
+                                                .Distinct().ToArray();
 
-            var referencePaths = trustedPlatforms.Split(Path.PathSeparator);
-
-            var references = referencePaths
-                .Where(p => File.Exists(p))  // Garantir que o arquivo exista
+            var allowedNamespaces = allowedTypes
+                .Select(t => t.Namespace)
+                .Where(ns => ns != null)
                 .Distinct()
-                .Select(p => MetadataReference.CreateFromFile(p))
                 .ToList();
 
-            references.Add(MetadataReference.CreateFromFile(typeof(System.Linq.Enumerable).Assembly.Location)); // System.Linq
-            references.Add(MetadataReference.CreateFromFile(typeof(System.Collections.Generic.List<>).Assembly.Location)); // System.Collections.Generic
-            references.Add(MetadataReference.CreateFromFile(typeof(System.Runtime.CompilerServices.DynamicAttribute).Assembly.Location)); // Para tipos dinâmicos
-            references.Add(MetadataReference.CreateFromFile(typeof(System.Runtime.InteropServices.Marshal).Assembly.Location)); // System.Runtime (para tipos básicos e manipulação de memória)
-            references.Add(MetadataReference.CreateFromFile(typeof(System.String).Assembly.Location)); // System.Private.CoreLib (geral)
-            references.Add(MetadataReference.CreateFromFile(typeof(System.Object).Assembly.Location)); // System.Private.CoreLib (geral)
-            var netstandard = referencePaths.FirstOrDefault(p => Path.GetFileName(p).Equals("netstandard.dll", StringComparison.OrdinalIgnoreCase));
-            if (netstandard != null)
-                references.Add(MetadataReference.CreateFromFile(netstandard));
+            allowedNamespaces.Add("System");
 
-            if (optionalReferences != null)
-                foreach (var optionalRef in optionalReferences)
-                    references.Add(MetadataReference.CreateFromFile(optionalRef.Assembly.Location));
+            var refs = allowedAssemblies
+                .Select(a => MetadataReference.CreateFromFile(a.Location))
+                .ToArray();
 
-            var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode);
+            var scriptOptions = ScriptOptions.Default
+                .WithReferences(refs)
+                .WithImports(allowedNamespaces)
+                .WithAllowUnsafe(false);
 
-            var compilation = CSharpCompilation.Create(
-                assemblyName: Path.GetRandomFileName(),
-                syntaxTrees: new[] { syntaxTree },
-                references: references,
-                options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
-            );
-
-            using var ms = new MemoryStream();
-            var result = compilation.Emit(ms);
-
-            if (!result.Success)
-            {
-                string errors = "Compilation failed:\n";
-                foreach (var diagnostic in result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error))
-                {
-                    var lineSpan = diagnostic.Location.GetLineSpan();
-                    errors += $"Line {lineSpan.StartLinePosition.Line + 1}, Column {lineSpan.StartLinePosition.Character + 1}: {diagnostic.GetMessage()}\n";
-                }
-                throw new Exception(errors);
-            }
-
-            ms.Seek(0, SeekOrigin.Begin);
-            Assembly assembly = Assembly.Load(ms.ToArray());
-
-            Type dynamicType = assembly.GetType(typeName)
-                ?? throw new Exception($"Classe '{typeName}' não encontrada no código compilado.");
-
-            object instance = Activator.CreateInstance(dynamicType)
-                ?? throw new Exception($"Não foi possível criar instância da classe '{typeName}'.");
-
-            MethodInfo method = dynamicType.GetMethod(methodName)
-                ?? throw new Exception($"Método '{methodName}' não encontrado na classe '{typeName}'.");
-
+            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(timeoutMs));
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, externalCancellation);
+                        
             try
             {
-                return method.Invoke(instance, new object[] { parameter });
+                var script = CSharpScript.Create(sourceCode, scriptOptions, globals.GetType());
+                var runner = script.CreateDelegate();
+                return await runner(globals, linkedCts.Token);
             }
-            catch (TargetInvocationException ex)
+            catch (CompilationErrorException ex)
             {
-                throw ex.InnerException ?? ex;
+                throw new Exception("Erro ao compilar script:\n" + string.Join("\n", ex.Diagnostics));
+            }
+            catch (OperationCanceledException)
+            {
+                throw new TimeoutException($"Execução excedeu {timeoutMs}ms.");
             }
         }
 
@@ -357,6 +331,7 @@ namespace Rochas.Extensions
             return false;
         }
 
+        #region Data compression methods
         public static string Zip(this string value)
         {
             return Compressor.ZipText(value);
@@ -366,5 +341,7 @@ namespace Rochas.Extensions
         {
             return Compressor.UnZipText(value);
         }
+
+        #endregion
     }
 }
