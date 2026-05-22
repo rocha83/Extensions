@@ -205,11 +205,11 @@ namespace Rochas.Extensions
 
         #region Runtime code execution methods
 
-        public static async Task<object?> ExecuteAsSourceCode(string sourceCode, object globals, Type[] allowedTypes,
+        public static async Task<object?> ExecuteAsSourceCode(this string sourceCode, object globals, Type[] allowedTypes,
                                                               int timeoutMs = 300, CancellationToken externalCancellation = default)
         {
             if (allowedTypes == null || allowedTypes.Length == 0)
-                throw new ArgumentException("É necessário informar pelo menos um tipo permitido.");
+                throw new ArgumentException("Allowed types is required.");
 
             var allowedAssemblies = allowedTypes.Select(t => t.Assembly)
                                                 .Concat(new[] { typeof(object).Assembly })  // System.Private.CoreLib
@@ -244,11 +244,11 @@ namespace Rochas.Extensions
             }
             catch (CompilationErrorException ex)
             {
-                throw new Exception("Erro ao compilar script:\n" + string.Join("\n", ex.Diagnostics));
+                throw new Exception("Script compilation error:\n" + string.Join("\n", ex.Diagnostics));
             }
             catch (OperationCanceledException)
             {
-                throw new TimeoutException($"Execução excedeu {timeoutMs}ms.");
+                throw new TimeoutException($"Execution time exceeded {timeoutMs}ms.");
             }
         }
 
