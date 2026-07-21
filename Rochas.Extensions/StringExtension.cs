@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -72,6 +72,7 @@ namespace Rochas.Extensions
 
             return value.Replace("\\", string.Empty)
                         .Replace("\"", string.Empty)
+                        .Replace("\r", " ")
                         .Replace("\n", " ").Trim();
         }
 
@@ -105,15 +106,27 @@ namespace Rochas.Extensions
             vem,vai,vao,foi,estao,estava,foram,ser,estar,ter,
             valor,valor de,valor do,valor da";
 
-            var connectiveArray = connectives.Split(',').ToList();
-            foreach (var connective in connectiveArray)
-                value = value.Replace(connective, " ");
+            // FIX: trim each token after split (removes leading \n and indentation spaces
+            //      produced by the verbatim multiline string), order longest-first to
+            //      prevent partial matches (e.g. "das" must be removed before "da"),
+            //      then replace with space delimiters to enforce word boundaries and
+            //      avoid destroying characters inside unrelated words.
+            var connectiveArray = connectives
+                .Split(',')
+                .Select(c => c.Trim())
+                .Where(c => !string.IsNullOrEmpty(c))
+                .OrderByDescending(c => c.Length)
+                .ToList();
 
-            if (!string.IsNullOrWhiteSpace(value))
-                value = value.ToLower();
+            // Pad with spaces so the first and last words are also matched by " word "
+            value = " " + value.ToLower() + " ";
 
             foreach (var connective in connectiveArray)
-                value = value.Replace(connective, " ");
+                value = value.Replace($" {connective} ", " ");
+
+            // Collapse any sequences of multiple spaces left after removal
+            while (value.Contains("  "))
+                value = value.Replace("  ", " ");
 
             return value.Trim();
         }

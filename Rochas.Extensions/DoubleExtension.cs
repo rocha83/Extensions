@@ -6,9 +6,7 @@ namespace Rochas.Extensions
     {
         public static int ToInt(this double value)
         {
-            int.TryParse(value.ToString("N0"), out var result);
-            
-            return result;
+            return (int)Math.Round(value);
         }
     }
 }
