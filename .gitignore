@@ -4,15 +4,8 @@
 
 /.vs/Rochas.Extensions
 /Rochas.Extensions/.vs
-/Rochas.Extensions/bin/Release
+/Rochas.Extensions/bin
 /Rochas.Extensions/obj
-/Rochas.Extensions/bin/Debug
 /.vs/ProjectEvaluation
-/TestConsole/bin/Release/net6.0
-/TestConsole/obj
-/TestConsole/bin/Debug/net6.0
-/TestConsole/bin/Debug/net8.0
-/TemplateEngineHost/vs
-/TestConsole/bin/Release/net8.0
 /Rochas.Extensions.Tests/bin
 /Rochas.Extensions.Tests/obj
