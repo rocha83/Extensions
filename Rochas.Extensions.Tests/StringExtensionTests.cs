@@ -77,14 +77,24 @@ public class StringExtensionTests
     }
 
     [Fact]
-    public void ToNormalizedDescription_RealWorldExample_FormatsDescription()
+    public void ToNormalizedDescription_RealWorldEquipment_FormatsAllLines()
     {
-        var rawDescription = "TRATOR\r\nMARCA MASSEY FERGUSON\r\nMODELO 292 (4x4)\r\nANO 2008\r\nHORAS 9.000";
+        var rawDescription = "CAMINHONETE\r\nMARCA CHEVROLET\r\nMODELO S10 4X4\r\nANO 2022\r\nKM 45.000\r\nCOMBUSTÍVEL DIESEL\r\nPOTENCIA 200 CV\r\nVALOR R$ 250.000,00";
 
         var result = rawDescription.ToNormalizedDescription();
 
         result.Should().NotBeNullOrWhiteSpace();
-        result.Should().Contain("TRATOR");
-        result.Should().Contain("MASSEY");
+        result.Should().NotContain("\r", "carriage returns devem ser removidos");
+
+        var lines = result.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        lines.Should().HaveCount(8, "todas as 8 linhas devem ser preservadas");
+        lines[0].Trim().Should().Be("CAMINHONETE");
+        lines[1].Trim().Should().Be("MARCA CHEVROLET");
+        lines[2].Trim().Should().Be("MODELO S10 4X4");
+        lines[3].Trim().Should().Be("ANO 2022");
+        lines[4].Trim().Should().Be("KM 45.000");
+        lines[5].Trim().Should().Be("COMBUSTÍVEL DIESEL");
+        lines[6].Trim().Should().Be("POTENCIA 200 CV");
+        lines[7].Trim().Should().Be("VALOR R$ 250.000,00");
     }
 }
