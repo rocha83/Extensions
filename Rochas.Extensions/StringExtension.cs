@@ -7,6 +7,7 @@ using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Xml.Serialization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Scripting;
@@ -57,88 +58,79 @@ namespace Rochas.Extensions
 
         #region Data mining methods
 
+        private static readonly HashSet<string> StopWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "a", "ao", "aos", "as", "o", "os", "da", "do", "das", "dos", "no", "na", "nas", "nos",
+            "de", "por", "para", "pra", "com", "sem", "sobre", "entre", "ate", "apos", "em", "onde",
+            "quando", "que", "se", "pois", "como", "ou", "mas", "porem", "todavia", "entretanto",
+            "entao", "logo", "assim", "portanto", "primeiro", "primeiramente", "sobretudo", "acima",
+            "antes", "depois", "anteriormente", "posteriormente", "seguida", "agora", "atualmente",
+            "hoje", "sempre", "raramente", "vezes", "frequentemente", "constantemente", "eventualmente",
+            "ocasionalmente", "enquanto", "desde", "apenas", "ja", "mal", "quase", "nem", "bem",
+            "igualmente", "similarmente", "analogamente", "conforme", "segundo", "consoante",
+            "ainda", "ademais", "outrossim", "tambem", "talvez", "provavelmente", "possivelmente",
+            "certamente", "porque", "porquanto", "porisso", "embora", "contudo", "perto", "proximo",
+            "junto", "juntamente", "dentro", "fora", "aqui", "ali", "la", "este", "esta", "isto",
+            "esse", "essa", "isso", "aquele", "aquela", "aquilo", "vem", "vai", "vao", "foi",
+            "estao", "estava", "foram", "ser", "estar", "ter", "valor", "qual", "quais", "um",
+            "uma", "uns", "umas", "ele", "ela", "eles", "elas", "meu", "minha", "meus", "minhas",
+            "seu", "sua", "seus", "suas", "nosso", "nossa", "nossos", "nossas", "teu", "tua",
+            "teus", "tuas", "dele", "dela", "deles", "delas", "eu", "tu", "voce", "voces", "nos",
+            "lhe", "lhes", "e", "exemplo", "forma", "modo", "dessa", "deste", "desse", "mesma",
+            "acordo", "conformidade", "disso", "certeza", "quer", "dizer", "seja", "saber",
+            "fim", "finalidade", "intuito", "apesar", "posto", "passo", "suma", "sintese",
+            "resumo", "conclusao", "enfim"
+        };
+
         public static string FilterSpecialChars(this string value)
         {
-            int charCount = 0;
-            var specialChars = ".:,;|/()[]'+—=!?";
-            var fromChars = "àáãçéêíóõôúÀÁÃÇÉÍÓÔÕÚ";
-            var toChars = "aaaceeiooouAAACEIOOOU";
+            if (string.IsNullOrWhiteSpace(value))
+                return string.Empty;
 
-            foreach (var character in specialChars)
-                value = value.Replace(character, ' ');
+            // Fold all diacritics / accents using FormD (supports all PT-BR accents: àáãçéêíóõôúâÂÊ, etc.)
+            var normalized = value.Normalize(NormalizationForm.FormD);
+            var sb = new StringBuilder(normalized.Length);
 
-            foreach (var character in fromChars)
-                value = value.Replace(character, toChars[charCount++]);
+            foreach (var ch in normalized)
+            {
+                var category = CharUnicodeInfo.GetUnicodeCategory(ch);
+                if (category != UnicodeCategory.NonSpacingMark)
+                {
+                    if (char.IsLetterOrDigit(ch))
+                        sb.Append(ch);
+                    else
+                        sb.Append(' ');
+                }
+            }
 
-            return value.Replace("\\", string.Empty)
-                        .Replace("\"", string.Empty)
-                        .Replace("\r", " ")
-                        .Replace("\n", " ").Trim();
+            return sb.ToString().Normalize(NormalizationForm.FormC).ToLowerInvariant();
         }
 
         public static string RemoveTextConnectives(this string value)
         {
-            var connectives = @"
-            a,ao,aos,à,às,as,o,os,da,do,das,dos,no,na,nas,nos,
-            de,por,para,pra,com,sem,sobre,entre,ate,apos,após,ate,
-            em,ao,onde,quando,que,se,pois,como,ou,mas,porém,todavia,entretanto,
-            entao,então,logo,assim,portanto,dessa forma,deste modo,desse modo,
-            primeiro,primeiramente,sobretudo,acima de tudo,antes,depois,
-            anteriormente,posteriormente,em seguida,agora,atualmente,hoje,
-            sempre,raramente,às vezes,vezes,frequentemente,constantemente,
-            eventualmente,ocasionalmente,enquanto,desde,desde que,
-            apenas,ja,mal,quase,nem,bem,
-            igualmente,da mesma forma,do mesmo modo,similarmente,analogamente,
-            conforme,segundo,consoante,de acordo,em conformidade,
-            tal qual,tanto quanto,assim como,
-            ainda,alem disso,ademais,outrossim,tambem,nao so,mas tambem,
-            bem como,como tambem,nao apenas,
-            talvez,provavelmente,possivelmente,certamente,com certeza,
-            por exemplo,isto e,quer dizer,ou seja,a saber,
-            para que,a fim de,com o fim de,com a finalidade de,com o intuito de,
-            porque,porquanto,por isso,
-            porem,contudo,todavia,entretanto,no entanto,
-            embora,apesar de,mesmo que,posto que,conquanto,se bem que,
-            por mais que,por menos que,ao passo que,enquanto que,
-            em suma,em sintese,em resumo,em conclusao,enfim,
-            perto,proximo,junto,juntamente,dentro,fora,aqui,ali,la,
-            este,esta,isto,esse,essa,isso,aquele,aquela,aquilo,
-            vem,vai,vao,foi,estao,estava,foram,ser,estar,ter,
-            valor,valor de,valor do,valor da";
+            if (string.IsNullOrWhiteSpace(value))
+                return string.Empty;
 
-            // FIX: trim each token after split (removes leading \n and indentation spaces
-            //      produced by the verbatim multiline string), order longest-first to
-            //      prevent partial matches (e.g. "das" must be removed before "da"),
-            //      then replace with space delimiters to enforce word boundaries and
-            //      avoid destroying characters inside unrelated words.
-            var connectiveArray = connectives
-                .Split(',')
-                .Select(c => c.Trim())
-                .Where(c => !string.IsNullOrEmpty(c))
-                .OrderByDescending(c => c.Length)
-                .ToList();
+            var clean = value.FilterSpecialChars();
+            var words = clean.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var filtered = words.Where(w => !StopWords.Contains(w));
 
-            // Pad with spaces so the first and last words are also matched by " word "
-            value = " " + value.ToLower() + " ";
-
-            foreach (var connective in connectiveArray)
-                value = value.Replace($" {connective} ", " ");
-
-            // Collapse any sequences of multiple spaces left after removal
-            while (value.Contains("  "))
-                value = value.Replace("  ", " ");
-
-            return value.Trim();
+            return string.Join(' ', filtered);
         }
 
-        public static string[] Tokenize(this string value)
+        public static string[]? Tokenize(this string value)
         {
             if (string.IsNullOrWhiteSpace(value))
                 return null;
 
-            var result = value.FilterSpecialChars().RemoveTextConnectives().Split(' ');
+            var clean = value.FilterSpecialChars();
+            var words = clean.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-            return result.Where(c => !string.IsNullOrWhiteSpace(c.Trim()) && !c.Equals("-")).ToArray();
+            var tokens = words
+                .Where(w => !StopWords.Contains(w) && !w.Equals("-"))
+                .ToArray();
+
+            return tokens;
         }
 
         public static string ToNormalizedDescription(this string value)
