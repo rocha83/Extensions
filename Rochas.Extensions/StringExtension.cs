@@ -79,7 +79,10 @@ namespace Rochas.Extensions
             "lhe", "lhes", "e", "exemplo", "forma", "modo", "dessa", "deste", "desse", "mesma",
             "acordo", "conformidade", "disso", "certeza", "quer", "dizer", "seja", "saber",
             "fim", "finalidade", "intuito", "apesar", "posto", "passo", "suma", "sintese",
-            "resumo", "conclusao", "enfim"
+            "resumo", "conclusao", "enfim", "me", "tem", "tinha", "temos", "ter", "tenho", "algo", "algum",
+            "alguma", "alguns", "algumas", "informacao", "informacoes", "falar", "fale", "conte",
+            "conhece", "sabe", "saberia", "explicar", "explicacao", "duvida", "pergunta", "gostaria",
+            "queria", "ajuda", "respeito", "pouco", "tudo", "mim", "pode", "poderia"
         };
 
         public static string FilterSpecialChars(this string value)
